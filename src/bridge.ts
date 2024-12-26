@@ -252,7 +252,10 @@ export class Bridge extends EventEmitter {
     // set timeout 60000 ms，30000ms always timeout
     page.setDefaultTimeout(60000)
     // Does this related to(?) the CI Error: exception: Navigation Timeout Exceeded: 30000ms exceeded
-    await page.goto(url)
+    await page.goto(url, {
+      //The polling request on wx.qq.com prevents the page.goto() from reaching the 'load' state, so we use networkidle2 to wait for the page to be fully loaded.
+      waitUntil: 'networkidle2',
+    })
     log.verbose('PuppetWeChatBridge', 'initPage() after page.goto(url)')
 
     // await this.uosPatch(page)
@@ -263,7 +266,9 @@ export class Bridge extends EventEmitter {
       log.silly('PuppetWeChatBridge', 'initPage() page.setCookie() %s cookies set back', cookieList.length)
     }
 
-    page.on('load', () => this.emit('load', page))
+    //page.on('load', () => this.emit('load', page))
+    //due to polling request on wx.qq.com
+    page.on('domcontentloaded', () => this.emit('load', page))
     await page.reload() // reload page to make effect of the new cookie.
 
     return page
